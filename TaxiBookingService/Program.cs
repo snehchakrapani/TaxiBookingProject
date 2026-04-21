@@ -10,19 +10,32 @@ using TaxiBookingService.Middlewares;
 using TaxiBookingService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+
+var databaseProvider = configuration["DatabaseProvider"]?.Trim() ?? "SqlServer";
+var connectionString = configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+{
+    if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+        databaseProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString);
+        return;
+    }
+
+    options.UseSqlServer(connectionString);
+});
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IDriverService, DriverService>();
 builder.Services.AddSingleton<JwtHelper>();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSettings = configuration.GetSection("JwtSettings");
 var secretKey = Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!);
 
 builder.Services.AddAuthentication(options =>
@@ -48,15 +61,23 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCors(options =>
 {
+    var configuredOrigins = configuration["AllowedOrigins"]?
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    var allowedOrigins = configuredOrigins is { Length: > 0 }
+        ? configuredOrigins
+        : new[]
+        {
+            "https://localhost:5173",
+            "http://localhost:5173",
+            "https://localhost:5174",
+            "http://localhost:5174"
+        };
+
     options.AddPolicy("AllowReactApp", policy =>
-        policy.WithOrigins(
-                "https://localhost:5173",
-                "http://localhost:5173",
-                "https://localhost:5174",
-                "http://localhost:5174")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-    );
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod());
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -90,7 +111,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+
+    if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase) ||
+        databaseProvider.Equals("PostgreSql", StringComparison.OrdinalIgnoreCase))
+    {
+        db.Database.EnsureCreated();
+    }
+    else
+    {
+        db.Database.Migrate();
+    }
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
