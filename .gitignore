@@ -1,7 +1,9 @@
 .vs/
 bin/
 obj/
+obj_verify/
 obj_verify_hosted/
 bin_verify_hosted/
 *.user
 *.suo
+LOCAL_PROJECT_NOTES.md
