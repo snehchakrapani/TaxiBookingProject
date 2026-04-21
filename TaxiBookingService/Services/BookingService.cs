@@ -33,12 +33,13 @@ namespace TaxiBookingService.Services
             if (bestDriver == null)
                 throw new AppException("No drivers available in your area for the selected cab type.");
 
-            double distance = DistanceHelper.Calculate(
-                bestDriver.Latitude, bestDriver.Longitude,
-                dto.PickupLatitude, dto.PickupLongitude);
+            // Fare and ETA should reflect the rider's trip, not the selected driver's approach distance.
+            double tripDistance = DistanceHelper.Calculate(
+                dto.PickupLatitude, dto.PickupLongitude,
+                dto.DropLatitude, dto.DropLongitude);
 
-            int eta = DistanceHelper.EstimateMinutes(distance);
-            decimal fare = DistanceHelper.CalculateFare(dto.CabType, distance);
+            int eta = DistanceHelper.EstimateMinutes(tripDistance);
+            decimal fare = DistanceHelper.CalculateFare(dto.CabType, tripDistance);
 
             var booking = new Booking
             {
