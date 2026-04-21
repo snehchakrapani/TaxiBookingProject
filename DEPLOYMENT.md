@@ -85,7 +85,7 @@ Use these settings:
 Add these environment variables in Render:
 
 - `DatabaseProvider` = `Postgres`
-- `ConnectionStrings__DefaultConnection` = your Neon PostgreSQL connection string
+- `ConnectionStrings__DefaultConnection` = your Neon PostgreSQL connection string in `Host=...;Port=5432;Database=...;Username=...;Password=...;SSL Mode=Require;Trust Server Certificate=true` format
 - `AllowedOrigins` = your Netlify site URL
 - `JwtSettings__SecretKey` = any strong secret key
 - `JwtSettings__Issuer` = `TaxiBookingService`
@@ -93,13 +93,29 @@ Add these environment variables in Render:
 
 Deploy, then copy the Render public URL.
 
+After deploy, verify the backend directly:
+
+- `https://your-render-service.onrender.com/`
+- `https://your-render-service.onrender.com/health`
+- `https://your-render-service.onrender.com/swagger`
+
+If the service is correct, the first two return JSON and `/swagger` opens.
+
 ## 9. Finish frontend connection
 
 Go back to Netlify and set:
 
 - `VITE_API_BASE_URL` = your Render URL
 
+Important:
+
+- use only the Render origin, for example `https://your-render-service.onrender.com`
+- do not add `/api`
+- do not add a trailing slash
+
 Redeploy the Netlify site.
+
+If login or register returns `404` from `/api/Auth/...`, the usual cause is that Render is still serving the wrong branch, wrong root directory, or an older deployment.
 
 ## 10. How to run locally later exactly like before
 
