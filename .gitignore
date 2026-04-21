@@ -3,3 +3,5 @@ bin/
 obj/
 *.user
 *.suo
+obj_verify/
+LOCAL_PROJECT_NOTES.md
