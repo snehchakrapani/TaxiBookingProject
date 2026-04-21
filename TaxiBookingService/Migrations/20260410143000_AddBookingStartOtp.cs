@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using TaxiBookingService.Data;
 
 #nullable disable
 
 namespace TaxiBookingService.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260410143000_AddBookingStartOtp")]
     public partial class AddBookingStartOtp : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

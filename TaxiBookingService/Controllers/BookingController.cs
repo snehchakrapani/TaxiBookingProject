@@ -12,10 +12,7 @@ namespace TaxiBookingService.Controllers
     {
         private readonly IBookingService _bookingService;
 
-        public BookingController(IBookingService bookingService)
-        {
-            _bookingService = bookingService;
-        }
+        public BookingController(IBookingService bookingService) => _bookingService = bookingService;
 
         [HttpPost("book")]
         [Authorize(Roles = "User")]
@@ -51,6 +48,35 @@ namespace TaxiBookingService.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await _bookingService.GetUserHistoryAsync(userId);
+            return Ok(result);
+        }
+
+        [HttpPut("payment-mode")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> SetPaymentMode([FromBody] PaymentModeDto dto)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var message = await _bookingService.SetPaymentModeAsync(userId, dto.BookingId, dto.PaymentMode);
+            return Ok(new { Message = message });
+        }
+
+        [HttpPut("rate")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> RateDriver([FromBody] RateDriverDto dto)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var message = await _bookingService.RateDriverAsync(userId, dto.BookingId, dto.Rating);
+            return Ok(new { Message = message });
+        }
+
+        [HttpGet("nearby-drivers")]
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> GetNearbyDrivers([FromQuery] string city)
+        {
+            if (string.IsNullOrWhiteSpace(city))
+                return BadRequest(new { message = "City is required." });
+
+            var result = await _bookingService.GetNearbyDriverCountsAsync(city);
             return Ok(result);
         }
     }

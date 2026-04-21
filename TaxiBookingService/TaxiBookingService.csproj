@@ -4,6 +4,8 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -13,6 +15,12 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="obj\**\*.cs;obj_verify\**\*.cs;bin_verify\**\*.cs" />
+		<EmbeddedResource Remove="obj\**\*;obj_verify\**\*;bin_verify\**\*" />
+		<None Remove="obj\**\*;obj_verify\**\*;bin_verify\**\*" />
 	</ItemGroup>
 
 </Project>

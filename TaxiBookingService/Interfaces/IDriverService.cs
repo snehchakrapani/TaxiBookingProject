@@ -12,5 +12,8 @@ namespace TaxiBookingService.Interfaces
         Task<string> UpdateAvailabilityAsync(int driverId, UpdateAvailabilityDto dto);
         Task<string> VerifyStartOtpAsync(int driverId, VerifyStartOtpDto dto);
         Task<string> CompleteRideAsync(int driverId, int bookingId);
+        Task<string> CancelAcceptedRideAsync(int driverId, int bookingId, string reason);
+        Task<DriverHistoryDto> GetDriverHistoryAsync(int driverId);
+        Task<BookingResponseDto?> GetCurrentBookingAsync(int driverId);
     }
 }

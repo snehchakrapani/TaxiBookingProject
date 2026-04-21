@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using TaxiBookingService.Models;
 
@@ -47,6 +47,11 @@ namespace TaxiBookingService.Data
             modelBuilder.Entity<Booking>()
                 .Property(b => b.Fare)
                 .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Booking>()
+                .Property(b => b.CancellationFee)
+                .HasColumnType("decimal(18,2)");
+
 
             
             modelBuilder.Entity<User>()

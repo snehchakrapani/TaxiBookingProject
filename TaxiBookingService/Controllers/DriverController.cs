@@ -13,64 +13,77 @@ namespace TaxiBookingService.Controllers
     {
         private readonly IDriverService _driverService;
 
-        public DriverController(IDriverService driverService)
-        {
-            _driverService = driverService;
-        }
+        public DriverController(IDriverService driverService) => _driverService = driverService;
+
+        private int DriverId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         [HttpGet("requests")]
         public async Task<IActionResult> GetPendingRequests()
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await _driverService.GetPendingRequestsAsync(driverId);
+            var result = await _driverService.GetPendingRequestsAsync(DriverId);
+            return Ok(result);
+        }
+
+        [HttpGet("history")]
+        public async Task<IActionResult> GetDriverHistory()
+        {
+            var result = await _driverService.GetDriverHistoryAsync(DriverId);
+            return Ok(result);
+        }
+
+        [HttpGet("current-booking")]
+        public async Task<IActionResult> GetCurrentBooking()
+        {
+            var result = await _driverService.GetCurrentBookingAsync(DriverId);
             return Ok(result);
         }
 
         [HttpPut("accept/{bookingId}")]
         public async Task<IActionResult> AcceptBooking(int bookingId)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.AcceptBookingAsync(driverId, bookingId);
+            var message = await _driverService.AcceptBookingAsync(DriverId, bookingId);
             return Ok(new { Message = message });
         }
 
         [HttpPut("decline/{bookingId}")]
         public async Task<IActionResult> DeclineBooking(int bookingId)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.DeclineBookingAsync(driverId, bookingId);
+            var message = await _driverService.DeclineBookingAsync(DriverId, bookingId);
             return Ok(new { Message = message });
         }
 
         [HttpPut("location")]
         public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationDto dto)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.UpdateLocationAsync(driverId, dto);
+            var message = await _driverService.UpdateLocationAsync(DriverId, dto);
             return Ok(new { Message = message });
         }
 
         [HttpPut("availability")]
         public async Task<IActionResult> UpdateAvailability([FromBody] UpdateAvailabilityDto dto)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.UpdateAvailabilityAsync(driverId, dto);
+            var message = await _driverService.UpdateAvailabilityAsync(DriverId, dto);
             return Ok(new { Message = message });
         }
 
         [HttpPut("verify-start-otp")]
         public async Task<IActionResult> VerifyStartOtp([FromBody] VerifyStartOtpDto dto)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.VerifyStartOtpAsync(driverId, dto);
+            var message = await _driverService.VerifyStartOtpAsync(DriverId, dto);
             return Ok(new { Message = message });
         }
 
         [HttpPut("complete/{bookingId}")]
         public async Task<IActionResult> CompleteRide(int bookingId)
         {
-            var driverId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var message = await _driverService.CompleteRideAsync(driverId, bookingId);
+            var message = await _driverService.CompleteRideAsync(DriverId, bookingId);
+            return Ok(new { Message = message });
+        }
+
+        [HttpPut("cancel-ride")]
+        public async Task<IActionResult> CancelAcceptedRide([FromBody] DriverCancelRideDto dto)
+        {
+            var message = await _driverService.CancelAcceptedRideAsync(DriverId, dto.BookingId, dto.Reason);
             return Ok(new { Message = message });
         }
     }
