@@ -1,6 +1,8 @@
 ﻿.vs/
 bin/
 obj/
+obj_verify_hosted/
+bin_verify_hosted/
 *.user
 *.suo
 obj_verify/
