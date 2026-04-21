@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "kill-port 5173 5174 && vite --port 5173 --strictPort --open",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,10 +14,13 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
+    "@react-leaflet/core": "^3.0.0",
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.15.0",
+    "leaflet": "^1.9.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-leaflet": "^5.0.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.14.0"
   },
@@ -30,6 +33,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "kill-port": "^2.0.1",
     "vite": "^8.0.4"
   }
 }
