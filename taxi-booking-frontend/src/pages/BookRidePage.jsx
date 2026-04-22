@@ -186,7 +186,7 @@ const BookRidePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError("");
     if (!form.pickupLocation.trim() || !form.dropLocation.trim()) { setError("Pickup and drop locations are required."); return; }
-    if (!pickupPoint || !dropPoint || !selectedPickup || !selectedDrop) { setError("Please select both locations from Indian suggestions."); return; }
+    if (!pickupPoint || !dropPoint || !selectedPickup || !selectedDrop) { setError("Please choose both locations from the city suggestions. Only Indian city routes are supported."); return; }
     try {
       const result = await bookRide({
         ...form,
@@ -241,10 +241,6 @@ const BookRidePage = () => {
                     </TextField>
                   </Grid>
                 </Grid>
-
-                <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                  Service available in {CITIES.length} Indian cities. Please choose pickup and drop from Indian suggestions only.
-                </Typography>
 
                 {CAB_INFO[form.cabType] && (
                   <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>

@@ -106,6 +106,12 @@ export default function DriverDashboard() {
   }, [requests]);
 
   useEffect(() => {
+    setOtp("");
+    setActionMsg("");
+    setActionErr("");
+  }, [currentBooking?.bookingId]);
+
+  useEffect(() => {
     if (!currentBooking) { setActiveRoutePoints([]); setDriverToPickupPts([]); setAnimProgress(0); return; }
     const pickup = { lat: currentBooking.pickupLatitude, lng: currentBooking.pickupLongitude };
     const drop   = { lat: currentBooking.dropLatitude,   lng: currentBooking.dropLongitude   };
@@ -162,7 +168,10 @@ export default function DriverDashboard() {
     catch { setIsAvailable(!val); }
   };
 
-  const handleVerifyOtp = () => doAction(() => verifyStartOtp({ bookingId: currentBooking.bookingId, otp: otp.trim() }).unwrap(), "OTP verified! Ride is now in progress.");
+  const handleVerifyOtp = () => doAction(async () => {
+    await verifyStartOtp({ bookingId: currentBooking.bookingId, otp: otp.trim() }).unwrap();
+    setOtp("");
+  }, "OTP verified! Ride is now in progress.");
   const handleComplete  = () => doAction(() => completeRide(currentBooking.bookingId).unwrap(), "Ride completed! Well done.");
 
   return (
@@ -449,7 +458,7 @@ export default function DriverDashboard() {
                             {r.riderRating && <Chip label={`${r.riderRating}⭐`} size="small" sx={{ fontSize: 12, bgcolor: "rgba(255,215,0,0.1)", color: "#fbbf24" }} />}
                           </Stack>
                         </Box>
-                        <Box sx={{ textAlign: "right" }}>
+                        <Box sx={{ textAlign: "right", minWidth: { xs: "100%", sm: 120 }, pl: { sm: 3 } }}>
                           <Typography sx={{ fontWeight: 800, color: "#4ade80", fontSize: 22 }}>₹{r.fare}</Typography>
                           <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.4)", mt: 0.5 }}>{new Date(r.bookedAt).toLocaleDateString("en-IN")}</Typography>
                         </Box>
