@@ -49,6 +49,8 @@ const DashboardLayout = ({ title, subtitle, links = [], children }) => {
   const initials = user?.name
     ? user.name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)
     : "?";
+  const outstandingBalance = Number(profile?.outstandingBalance || 0);
+  const balanceLabel = outstandingBalance > 0 ? `Account Balance: -₹${outstandingBalance.toFixed(2)}` : "Account Balance: ₹0.00";
 
   return (
     <Box sx={{ minHeight: "100vh", background: "radial-gradient(circle at top left, rgba(255,193,7,0.14), transparent 28%), radial-gradient(circle at bottom right, rgba(56,189,248,0.14), transparent 24%), linear-gradient(160deg, #0b0d12, #182338)" }}>
@@ -165,7 +167,7 @@ const DashboardLayout = ({ title, subtitle, links = [], children }) => {
               </>
             )}
             {profile?.role === "User" && (
-              <Chip label={`Account Balance: ₹${Number(profile.outstandingBalance || 0).toFixed(2)}`} sx={{ width: "fit-content", bgcolor: "rgba(245,158,11,0.18)", color: "#fbbf24", fontWeight: 700 }} />
+              <Chip label={balanceLabel} sx={{ width: "fit-content", bgcolor: "rgba(245,158,11,0.18)", color: "#fbbf24", fontWeight: 700 }} />
             )}
             <Button
               variant="contained"

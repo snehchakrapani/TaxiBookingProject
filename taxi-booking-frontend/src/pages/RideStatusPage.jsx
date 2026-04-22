@@ -63,6 +63,14 @@ export default function RideStatusPage() {
   const routePoints = mapData?.route ?? [];
 
   useEffect(() => {
+    setActionMsg("");
+    setActionErr("");
+    setSelectedStar(0);
+    setHoveredStar(0);
+    setPayMode("Cash");
+  }, [id]);
+
+  useEffect(() => {
     if (data?.status !== "InProgress") { setAnimProgress(0); return; }
     if (animRef.current) clearInterval(animRef.current);
     animRef.current = setInterval(() => setAnimProgress((p) => Math.min(p + 0.003, 0.98)), 1000);
@@ -153,6 +161,12 @@ export default function RideStatusPage() {
                     <Typography sx={{ fontSize: 14, fontWeight: 500 }}>{val}</Typography>
                   </Stack>
                 ))}
+
+                {data?.outstandingBalance > 0 && data?.status !== "Cancelled" && (
+                  <Alert severity="warning" sx={{ borderRadius: 3 }}>
+                    ₹{Number(data.outstandingBalance).toFixed(2)} from your previous cancellation has been added to this ride fare.
+                  </Alert>
+                )}
 
                 {data?.startOtp && !data.isStartOtpVerified && (
                   <Box sx={{ p: 3, borderRadius: 3, bgcolor: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", textAlign: "center", mt: 2 }}>

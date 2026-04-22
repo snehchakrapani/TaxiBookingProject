@@ -230,6 +230,12 @@ namespace TaxiBookingService.Services
 
         private static BookingResponseDto MapToResponseDto(Booking booking, Driver? driver, bool includeStartOtp)
         {
+            double tripDistance = DistanceHelper.Calculate(
+                booking.PickupLatitude, booking.PickupLongitude,
+                booking.DropLatitude, booking.DropLongitude);
+            decimal baseFare = DistanceHelper.CalculateFare(booking.CabType, tripDistance);
+            decimal previousDueAdded = booking.Status == BookingStatus.Cancelled ? 0 : Math.Max(0, booking.Fare - baseFare);
+
             return new BookingResponseDto
             {
                 BookingId = booking.Id,
@@ -252,7 +258,7 @@ namespace TaxiBookingService.Services
                 DropLongitude = booking.DropLongitude,
                 Fare = booking.Fare,
                 CancellationFee = booking.CancellationFee,
-                OutstandingBalance = 0,
+                OutstandingBalance = previousDueAdded,
                 EstimatedMinutes = booking.EstimatedMinutes,
                 PaymentMode = string.IsNullOrWhiteSpace(booking.PaymentMode) ? "Cash" : booking.PaymentMode,
                 RiderRating = booking.RiderRating,

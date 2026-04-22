@@ -7,6 +7,10 @@ export const CITIES = [
   "Chennai",
   "Pune",
   "Kolkata",
+  "Ahmedabad",
+  "Lucknow",
+  "Indore",
+  "Chandigarh",
 ];
 
 export const CAB_TYPES = ["Mini", "Sedan", "SUV"];
@@ -20,6 +24,10 @@ export const CITY_COORDINATES = {
   Chennai: { latitude: 13.0827, longitude: 80.2707 },
   Pune: { latitude: 18.5204, longitude: 73.8567 },
   Kolkata: { latitude: 22.5726, longitude: 88.3639 },
+  Ahmedabad: { latitude: 23.0225, longitude: 72.5714 },
+  Lucknow: { latitude: 26.8467, longitude: 80.9462 },
+  Indore: { latitude: 22.7196, longitude: 75.8577 },
+  Chandigarh: { latitude: 30.7333, longitude: 76.7794 },
 };
 
 export const STATUS_COLOR = {
