@@ -29,6 +29,7 @@ namespace TaxiBookingService.DTOs.Booking
 
         public decimal Fare { get; set; }
         public decimal CancellationFee { get; set; }
+        public decimal OutstandingBalance { get; set; }
         public int EstimatedMinutes { get; set; }   
         public string PaymentMode { get; set; } = "Cash";
         public int? RiderRating { get; set; }

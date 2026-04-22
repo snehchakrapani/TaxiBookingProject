@@ -11,6 +11,6 @@ namespace TaxiBookingService.Interfaces
         Task<string> SetPaymentModeAsync(int userId, int bookingId, string paymentMode);
         Task<string> RateDriverAsync(int userId, int bookingId, int rating);
         Task<Dictionary<string, int>> GetNearbyDriverCountsAsync(string city);
+        Task<int> CancelExpiredPendingBookingsAsync();
     }
 }
-

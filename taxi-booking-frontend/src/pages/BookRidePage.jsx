@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert, Box, Button, Card, CardContent, Chip, CircularProgress,
-  ClickAwayListener, Grid, List, ListItemButton, MenuItem,
+  ClickAwayListener, Grid, IconButton, List, ListItemButton, MenuItem,
   Stack, TextField, Typography,
 } from "@mui/material";
-import { MyLocation as MyLocationIcon } from "@mui/icons-material";
+import { CloseRounded as CloseRoundedIcon, MyLocation as MyLocationIcon } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import LeafletTripMap from "../components/LeafletTripMap";
@@ -26,13 +26,18 @@ const dropdownSx = {
   borderRadius: 3, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", bgcolor: "#1b2332",
 };
 
-const LocationSearchField = ({ label, open, value, options, loading, onInputChange, onClose, onSelect, sx, endAdornment }) => (
+const LocationSearchField = ({ label, open, value, options, loading, onInputChange, onClose, onSelect, sx, endAdornment, onClear }) => (
   <ClickAwayListener onClickAway={onClose}>
     <Box sx={{ position: "relative" }}>
       <TextField label={label} value={value} fullWidth sx={sx}
         onFocus={() => onInputChange(value, true)}
         onChange={(e) => onInputChange(e.target.value, true)}
-        slotProps={{ input: { endAdornment: loading ? <CircularProgress size={16} /> : endAdornment } }} />
+        slotProps={{ input: { endAdornment: loading ? <CircularProgress size={16} /> : (
+          <>
+            {value ? <IconButton size="small" onClick={onClear} sx={{ color: "rgba(255,255,255,0.55)" }}><CloseRoundedIcon fontSize="small" /></IconButton> : null}
+            {endAdornment}
+          </>
+        ) } }} />
 
       {open && value.trim().length >= 2 && (
         <Box component="div" elevation={8} sx={dropdownSx}>
@@ -181,17 +186,16 @@ const BookRidePage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault(); setError("");
     if (!form.pickupLocation.trim() || !form.dropLocation.trim()) { setError("Pickup and drop locations are required."); return; }
+    if (!pickupPoint || !dropPoint || !selectedPickup || !selectedDrop) { setError("Please select both locations from Indian suggestions."); return; }
     try {
-      const cityCoords = CITY_COORDINATES[form.city];
-      const coords = pickupPoint || { lat: cityCoords.latitude, lng: cityCoords.longitude };
       const result = await bookRide({
         ...form,
         pickupLocation: form.pickupLocation.trim(), dropLocation: form.dropLocation.trim(),
-        pickupLatitude: coords.lat, pickupLongitude: coords.lng,
-        dropLatitude: dropPoint?.lat ?? 0, dropLongitude: dropPoint?.lng ?? 0,
+        pickupLatitude: pickupPoint.lat, pickupLongitude: pickupPoint.lng,
+        dropLatitude: dropPoint.lat, dropLongitude: dropPoint.lng,
       }).unwrap();
       localStorage.setItem(`booking_map_${result.bookingId}`, JSON.stringify({
-        pickup: coords, drop: dropPoint,
+        pickup: pickupPoint, drop: dropPoint,
         route: routeResult?.points ?? [],
         summary: routeResult ? { distance: routeResult.distanceKm * 1000, duration: routeResult.durationMin * 60 } : null,
       }));
@@ -215,12 +219,14 @@ const BookRidePage = () => {
                   loading={pickup.loading || detectingLoc}
                   endAdornment={detectingLoc ? <CircularProgress size={16} /> : <MyLocationIcon sx={{ fontSize: 18, color: "rgba(255,255,255,0.5)" }} />}
                   onInputChange={(v, o) => { setPickupQuery(v); pickup.setIsOpen(o); setSelectedPickup(null); setForm((p) => ({ ...p, pickupLocation: v })); }}
+                  onClear={() => { setPickupQuery(""); setSelectedPickup(null); setForm((p) => ({ ...p, pickupLocation: "" })); pickup.setIsOpen(false); }}
                   onClose={() => pickup.setIsOpen(false)} onSelect={selectPickup} />
 
                 <LocationSearchField label="Drop location" sx={inputSx}
                   open={drop.isOpen} value={dropQuery} options={drop.isOpen ? drop.options : []}
                   loading={drop.loading}
                   onInputChange={(v, o) => { setDropQuery(v); drop.setIsOpen(o); setSelectedDrop(null); setForm((p) => ({ ...p, dropLocation: v })); }}
+                  onClear={() => { setDropQuery(""); setSelectedDrop(null); setForm((p) => ({ ...p, dropLocation: "" })); drop.setIsOpen(false); }}
                   onClose={() => drop.setIsOpen(false)} onSelect={selectDrop} />
 
                 <Grid container spacing={2.5}>
@@ -235,6 +241,10 @@ const BookRidePage = () => {
                     </TextField>
                   </Grid>
                 </Grid>
+
+                <Typography sx={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                  Service available in {CITIES.length} Indian cities. Please choose pickup and drop from Indian suggestions only.
+                </Typography>
 
                 {CAB_INFO[form.cabType] && (
                   <Box sx={{ p: 2.5, borderRadius: 3, bgcolor: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}>

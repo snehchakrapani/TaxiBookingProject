@@ -18,12 +18,27 @@ namespace TaxiBookingService.Services
 
         public async Task<List<BookingResponseDto>> GetPendingRequestsAsync(int driverId)
         {
+            var expiryCutoff = DateTime.UtcNow.AddMinutes(-5);
+            var expired = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Pending && b.BookedAt <= expiryCutoff)
+                .ToListAsync();
+            if (expired.Count > 0)
+            {
+                expired.ForEach(b =>
+                {
+                    b.Status = BookingStatus.Cancelled;
+                    b.CancelReason = "No driver was assigned within 5 minutes.";
+                });
+                await _context.SaveChangesAsync();
+            }
+
             var driver = await _context.Drivers.FindAsync(driverId)
                 ?? throw new AppException("Driver not found.");
 
             var bookings = await _context.Bookings
                 .Include(b => b.Driver)
                 .Where(b => b.Status == BookingStatus.Pending
+                         && b.BookedAt > expiryCutoff
                          && b.CabType.ToLower() == driver.CabType.ToLower()
                          && b.City.ToLower() == driver.City.ToLower())
                 .OrderBy(b => b.BookedAt)
@@ -81,8 +96,16 @@ namespace TaxiBookingService.Services
 
         public async Task<string> DeclineBookingAsync(int driverId, int bookingId)
         {
+            var driver = await _context.Drivers.FindAsync(driverId)
+                ?? throw new AppException("Driver not found.");
+
             var booking = await _context.Bookings
-                .FirstOrDefaultAsync(b => b.Id == bookingId && b.DriverId == driverId)
+                .FirstOrDefaultAsync(b => b.Id == bookingId
+                    && ((b.DriverId == driverId)
+                    || (b.DriverId == null
+                        && b.Status == BookingStatus.Pending
+                        && b.CabType.ToLower() == driver.CabType.ToLower()
+                        && b.City.ToLower() == driver.City.ToLower())))
                 ?? throw new AppException("Booking not found.");
 
             booking.DriverId = null;
@@ -91,7 +114,6 @@ namespace TaxiBookingService.Services
             booking.StartOtpGeneratedAt = null;
             booking.IsStartOtpVerified = false;
 
-            var driver = await _context.Drivers.FindAsync(driverId);
             if (driver != null) driver.IsAvailable = true;
 
             await _context.SaveChangesAsync();
@@ -235,15 +257,18 @@ namespace TaxiBookingService.Services
                     && (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Pending))
                 ?? throw new AppException("Booking not found or it cannot be cancelled at this stage.");
 
-            booking.Status = BookingStatus.Cancelled;
+            booking.DriverId = null;
+            booking.Status = BookingStatus.Pending;
             booking.CancelReason = $"[Driver cancelled] {reason}";
-            booking.CancellationFee = 0;
+            booking.StartOtp = null;
+            booking.StartOtpGeneratedAt = null;
+            booking.IsStartOtpVerified = false;
 
             var driver = await _context.Drivers.FindAsync(driverId);
             if (driver != null) driver.IsAvailable = true;
 
             await _context.SaveChangesAsync();
-            return "Booking cancelled successfully.";
+            return "Booking moved back to pending.";
         }
     }
 }
