@@ -52,11 +52,10 @@ export default function DriverDashboard() {
   const [tab,           setTab]           = useState(0);
   const [isAvailable,   setIsAvailable]   = useState(true);
   const [driverLocation,setDriverLocation]= useState(null);
-  const [latInput,      setLatInput]      = useState("");
-  const [lngInput,      setLngInput]      = useState("");
   const [otp,           setOtp]           = useState("");
   const [flashBooking,  setFlashBooking]  = useState(null);
   const [cancelReason,  setCancelReason]  = useState(CANCEL_REASONS[0]);
+  const [declinedIds,   setDeclinedIds]   = useState([]);
   const [activeRoutePoints, setActiveRoutePoints] = useState([]);
   const [driverToPickupPts, setDriverToPickupPts] = useState([]);
   const [animProgress,  setAnimProgress]  = useState(0);
@@ -91,8 +90,6 @@ export default function DriverDashboard() {
     navigator.geolocation.getCurrentPosition(
       ({ coords: { latitude: lat, longitude: lng } }) => {
         setDriverLocation({ lat, lng });
-        setLatInput(lat.toFixed(6));
-        setLngInput(lng.toFixed(6));
       },
       () => {},
       { enableHighAccuracy: true, timeout: 8000 }
@@ -101,6 +98,7 @@ export default function DriverDashboard() {
 
   useEffect(() => {
     if (!requests.length) { prevIdsRef.current = new Set(); return; }
+    setDeclinedIds((ids) => ids.filter((id) => requests.some((r) => r.bookingId === id)));
     const currentIds = new Set(requests.map((r) => r.bookingId));
     const newOnes    = requests.filter((r) => !prevIdsRef.current.has(r.bookingId));
     if (prevIdsRef.current.size > 0 && newOnes.length > 0) { setFlashBooking(newOnes[0]); playBeep(); }
@@ -141,13 +139,21 @@ export default function DriverDashboard() {
     setFlashBooking(null); setTab(1);
   };
 
-  const handleDecline = (bookingId) => doAction(() => declineBooking(bookingId).unwrap(), "Booking declined.");
+  const handleDecline = (bookingId) => {
+    setDeclinedIds((ids) => [...new Set([...ids, bookingId])]);
+    return doAction(() => declineBooking(bookingId).unwrap(), "Booking declined.");
+  };
 
   const handleLocationUpdate = () => {
-    const lat = parseFloat(latInput), lng = parseFloat(lngInput);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) { msg("", "Enter valid lat/lng."); return; }
-    setDriverLocation({ lat, lng });
-    doAction(() => updateLocation({ latitude: lat, longitude: lng }).unwrap(), "Location updated.");
+    if (!navigator.geolocation) { msg("", "Geolocation is not supported on this device."); return; }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords: { latitude: lat, longitude: lng } }) => {
+        setDriverLocation({ lat, lng });
+        doAction(() => updateLocation({ latitude: lat, longitude: lng }).unwrap(), "Location updated.");
+      },
+      () => msg("", "Unable to read your current location."),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
   };
 
   const handleAvailability = async (e) => {
@@ -218,8 +224,9 @@ export default function DriverDashboard() {
                   <Typography sx={{ fontWeight: 700, fontSize: 16 }}>Your Location</Typography>
                 </Stack>
                 <Stack spacing={2.5}>
-                  <TextField label="Latitude"  size="small" value={latInput} onChange={(e) => setLatInput(e.target.value)}  fullWidth />
-                  <TextField label="Longitude" size="small" value={lngInput} onChange={(e) => setLngInput(e.target.value)} fullWidth />
+                  <Typography sx={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
+                    {driverLocation ? `Current coordinates: ${driverLocation.lat.toFixed(6)}, ${driverLocation.lng.toFixed(6)}` : "Current location not available yet."}
+                  </Typography>
                   <Button variant="outlined" disabled={locLoading} onClick={handleLocationUpdate} sx={{ borderRadius: 3, py: 1.2 }}>
                     {locLoading ? <CircularProgress size={16} /> : "📍 Update Location"}
                   </Button>
@@ -247,7 +254,7 @@ export default function DriverDashboard() {
               </Card>
             ) : (
               <Stack spacing={3}>
-                {requests.map((req) => (
+                {requests.filter((req) => !declinedIds.includes(req.bookingId)).map((req) => (
                   <Card key={req.bookingId} sx={{ borderRadius: 5, border: "1px solid rgba(245,158,11,0.2)" }}>
                     <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" flexWrap="wrap" gap={2}>

@@ -45,6 +45,7 @@ export default function LeafletTripMap({
   const driverMarker   = useRef(null);
   const mainRoute      = useRef(null);
   const d2pRoute       = useRef(null);
+  const fitKeyRef      = useRef("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -97,14 +98,15 @@ export default function LeafletTripMap({
     const allPts = [
       ...(mainPts.length >= 2 ? mainPts : []),
       ...(driverToPickupRoute.length >= 2 ? driverToPickupRoute : []),
-      ...(driver ? [driver] : []),
     ];
-    if (allPts.length >= 2) {
+    const fitKey = JSON.stringify({ pickup, drop, mainPts, driverToPickupRoute, driverOnly });
+    if (allPts.length >= 2 && fitKeyRef.current !== fitKey) {
+      fitKeyRef.current = fitKey;
       map.fitBounds(L.latLngBounds(allPts.map((p) => [p.lat, p.lng])), {
         padding: [52, 52], animate: true, duration: 0.8,
       });
     }
-  }, [pickup, drop, routePoints, driverToPickupRoute, driverOnly, ready, driver]);
+  }, [pickup, drop, routePoints, driverToPickupRoute, driverOnly, ready]);
 
   useEffect(() => {
     const map = mapRef.current;

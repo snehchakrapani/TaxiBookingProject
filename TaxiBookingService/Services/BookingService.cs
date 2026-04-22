@@ -11,6 +11,7 @@ namespace TaxiBookingService.Services
     public class BookingService : IBookingService
     {
         private readonly AppDbContext _context;
+        private static readonly TimeSpan PendingTimeout = TimeSpan.FromMinutes(5);
 
         public BookingService(AppDbContext context)
         {
@@ -19,6 +20,8 @@ namespace TaxiBookingService.Services
 
         public async Task<BookingResponseDto> BookRideAsync(int userId, BookingRequestDto dto)
         {
+            await CancelExpiredPendingBookingsAsync();
+
             var allDrivers = await _context.Drivers
                 .Where(d => d.IsAvailable
                          && d.CabType.ToLower() == dto.CabType.ToLower()
@@ -40,6 +43,10 @@ namespace TaxiBookingService.Services
 
             int eta = DistanceHelper.EstimateMinutes(tripDistance);
             decimal fare = DistanceHelper.CalculateFare(dto.CabType, tripDistance);
+            var outstandingBalance = await _context.Bookings
+                .Where(b => b.UserId == userId && b.Status == BookingStatus.Cancelled && b.CancellationFee > 0)
+                .SumAsync(b => b.CancellationFee);
+            fare += outstandingBalance;
 
             var booking = new Booking
             {
@@ -64,6 +71,16 @@ namespace TaxiBookingService.Services
             };
 
             _context.Bookings.Add(booking);
+
+            if (outstandingBalance > 0)
+            {
+                var previousCancelled = await _context.Bookings
+                    .Where(b => b.UserId == userId && b.Status == BookingStatus.Cancelled && b.CancellationFee > 0)
+                    .ToListAsync();
+
+                previousCancelled.ForEach(b => b.CancellationFee = 0);
+            }
+
             await _context.SaveChangesAsync();
 
             return MapToResponseDto(booking, null, includeStartOtp: true);
@@ -71,6 +88,8 @@ namespace TaxiBookingService.Services
 
         public async Task<BookingResponseDto> GetBookingStatusAsync(int bookingId, int requesterId, string role)
         {
+            await CancelExpiredPendingBookingsAsync();
+
             var booking = await _context.Bookings
                 .Include(b => b.Driver)
                 .FirstOrDefaultAsync(b => b.Id == bookingId)
@@ -120,6 +139,8 @@ namespace TaxiBookingService.Services
 
         public async Task<List<BookingResponseDto>> GetUserHistoryAsync(int userId)
         {
+            await CancelExpiredPendingBookingsAsync();
+
             var bookings = await _context.Bookings
                 .Include(b => b.Driver)
                 .Where(b => b.UserId == userId)
@@ -174,6 +195,8 @@ namespace TaxiBookingService.Services
 
         public async Task<Dictionary<string, int>> GetNearbyDriverCountsAsync(string city)
         {
+            await CancelExpiredPendingBookingsAsync();
+
             var groups = await _context.Drivers
                 .Where(d => d.IsAvailable && d.City.ToLower() == city.ToLower())
                 .GroupBy(d => d.CabType.ToLower())
@@ -181,6 +204,28 @@ namespace TaxiBookingService.Services
                 .ToListAsync();
 
             return groups.ToDictionary(x => x.CabType, x => x.Count);
+        }
+
+        public async Task<int> CancelExpiredPendingBookingsAsync()
+        {
+            var cutoff = DateTime.UtcNow.Subtract(PendingTimeout);
+            var expired = await _context.Bookings
+                .Where(b => b.Status == BookingStatus.Pending && b.BookedAt <= cutoff)
+                .ToListAsync();
+
+            if (expired.Count == 0) return 0;
+
+            expired.ForEach(b =>
+            {
+                b.Status = BookingStatus.Cancelled;
+                b.CancelReason = "No driver was assigned within 5 minutes.";
+                b.StartOtp = null;
+                b.StartOtpGeneratedAt = null;
+                b.IsStartOtpVerified = false;
+            });
+
+            await _context.SaveChangesAsync();
+            return expired.Count;
         }
 
         private static BookingResponseDto MapToResponseDto(Booking booking, Driver? driver, bool includeStartOtp)
@@ -207,6 +252,7 @@ namespace TaxiBookingService.Services
                 DropLongitude = booking.DropLongitude,
                 Fare = booking.Fare,
                 CancellationFee = booking.CancellationFee,
+                OutstandingBalance = 0,
                 EstimatedMinutes = booking.EstimatedMinutes,
                 PaymentMode = string.IsNullOrWhiteSpace(booking.PaymentMode) ? "Cash" : booking.PaymentMode,
                 RiderRating = booking.RiderRating,

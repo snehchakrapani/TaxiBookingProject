@@ -78,9 +78,9 @@ export default function RideStatusPage() {
   const statusIndex = STATUS_STEPS.indexOf(data?.status ?? "");
   const progressPct = data?.status === "Cancelled" ? 0 : statusIndex >= 0 ? Math.round((statusIndex / (STATUS_STEPS.length - 1)) * 100) : 0;
 
-  const doAction = async (fn, successMsg) => {
+  const doAction = async (fn, successMsg, onSuccess) => {
     setActionMsg(""); setActionErr("");
-    try { await fn(); setActionMsg(successMsg); }
+    try { await fn(); setActionMsg(successMsg); onSuccess?.(); }
     catch (e) { setActionErr(getApiError(e, "Action failed.")); }
   };
 
@@ -179,11 +179,15 @@ export default function RideStatusPage() {
                         {CANCEL_REASONS.map((r) => <option key={r} value={r} style={{ background: "#1b2332" }}>{r}</option>)}
                       </Box>
                       <Button variant="outlined" color="error" disabled={cancelling} sx={{ borderRadius: 2 }}
-                        onClick={() => doAction(() => cancelBooking({ bookingId: Number(id), cancelReason }).unwrap(), "Booking cancelled.")}>
+                        onClick={() => doAction(() => cancelBooking({ bookingId: Number(id), cancelReason }).unwrap(), "Booking cancelled.", () => navigate("/book"))}>
                         {cancelling ? <CircularProgress size={18} /> : "Cancel Booking"}
                       </Button>
                     </Stack>
                   </Box>
+                )}
+
+                {data?.status === "InProgress" && (
+                  <Alert severity="info">Ride is in progress. No rider actions are available until the trip is completed.</Alert>
                 )}
 
                 {data?.status === "Completed" && !data?.riderRating && (
