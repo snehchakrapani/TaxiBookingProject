@@ -7,5 +7,6 @@
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;   // Plain text — we hash it in service
         public string Phone { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
     }
 }

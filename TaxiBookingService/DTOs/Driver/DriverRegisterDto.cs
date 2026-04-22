@@ -7,6 +7,7 @@
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
         public string CabType { get; set; } = string.Empty;   
         public string VehicleName { get; set; } = string.Empty;
         public string VehicleNumber { get; set; } = string.Empty;
