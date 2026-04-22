@@ -26,12 +26,16 @@ namespace TaxiBookingService.Services
             if (emailExists)
                 throw new AppException("Email is already registered.");
 
+            var phone = string.IsNullOrWhiteSpace(dto.Phone)
+                ? dto.PhoneNumber?.Trim() ?? string.Empty
+                : dto.Phone.Trim();
+
             var user = new User
             {
                 Name = dto.Name,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Phone = dto.Phone
+                Phone = phone
             };
 
             _context.Users.Add(user);
@@ -48,12 +52,16 @@ namespace TaxiBookingService.Services
             if (emailExists)
                 throw new AppException("Email is already registered.");
 
+            var phone = string.IsNullOrWhiteSpace(dto.Phone)
+                ? dto.PhoneNumber?.Trim() ?? string.Empty
+                : dto.Phone.Trim();
+
             var driver = new Driver
             {
                 Name = dto.Name,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Phone = dto.Phone,
+                Phone = phone,
                 CabType = dto.CabType,
                 VehicleName = dto.VehicleName,
                 VehicleNumber = dto.VehicleNumber,
