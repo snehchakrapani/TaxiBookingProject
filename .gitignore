@@ -1,8 +1,14 @@
-﻿.vs/
+.vs/
 bin/
 obj/
+node_modules/
+dist/
 obj_verify_hosted/
 bin_verify_hosted/
+TaxiBookingService/bin_verify/
+TaxiBookingService/bin_migrations/
+TaxiBookingService/obj_verify/
+TaxiBookingService/obj_migrations/
 *.user
 *.suo
 obj_verify/
